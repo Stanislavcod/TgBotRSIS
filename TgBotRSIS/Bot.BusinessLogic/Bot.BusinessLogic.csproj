@@ -8,7 +8,10 @@
 
   <ItemGroup>
     <Folder Include="Services\Interfaces\" />
-    <Folder Include="Services\Implementations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bot.GoogleSheet\Bot.GoogleSheet.csproj" />
   </ItemGroup>
 
 </Project>

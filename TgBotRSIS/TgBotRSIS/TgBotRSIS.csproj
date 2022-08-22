@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.57.0.2746" />
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2727" />
 	  <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
