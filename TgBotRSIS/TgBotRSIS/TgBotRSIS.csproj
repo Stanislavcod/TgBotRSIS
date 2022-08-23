@@ -8,11 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.57.0.2746" />
     <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2727" />
 	  <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.7" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.7">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -27,10 +26,15 @@
 	  <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
 	  <PackageReference Include="Telegram.Bot" Version="18.0.0" />
 	  <PackageReference Include="Telegram.Bot.Extensions.Polling" Version="1.0.2" />
+	  <PackageReference Include="Google.Apis" Version="1.57.0" />
+	  <PackageReference Include="Google.Apis.Auth" Version="1.57.0" />
+	  <PackageReference Include="Google.Apis.Core" Version="1.57.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Bot.BusinessLogic\Bot.BusinessLogic.csproj" />
+    <ProjectReference Include="..\Bot.Common\Bot.Common.csproj" />
     <ProjectReference Include="..\Bot.GoogleSheet\Bot.GoogleSheet.csproj" />
   </ItemGroup>
 

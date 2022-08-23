@@ -8,6 +8,12 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
 using TgBotRSIS.Controllers;
+using AutoMapper;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Bot.Common.Mapper;
+
 
 #region GoogleSheet
 string[] Scopes = {
@@ -60,10 +66,29 @@ foreach (var row in values)
 }
 #endregion
 
-
 var botController = new BotController();
 
 var botClient = new TelegramBotClient("5721181824:AAE_ZzRam-Ik3b6StGQkqHQc4wXS7tiSVWY");
+
+var mappingConfig = new MapperConfiguration(mc => mc.AddProfile(new MappingProfile()));
+IMapper mapper = mappingConfig.CreateMapper();
+var builder = new ConfigurationBuilder();
+static void BuildConfig(IConfigurationBuilder builder)
+{
+    builder.SetBasePath(Directory.GetCurrentDirectory())
+               .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+               .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+               .AddEnvironmentVariables();
+}
+BuildConfig(builder);
+var config = builder.Build();
+
+IHost host = Host.CreateDefaultBuilder()
+               .ConfigureServices((context, services) =>
+               {
+                   services.AddSingleton(mapper);
+               })
+               .Build();
 
 using var cts = new CancellationTokenSource();
 
