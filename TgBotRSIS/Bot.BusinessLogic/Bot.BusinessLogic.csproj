@@ -8,10 +8,26 @@
 
   <ItemGroup>
     <Folder Include="Services\Interfaces\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Bot.GoogleSheet\Bot.GoogleSheet.csproj" />
+	  <PackageReference Include="AutoMapper" Version="11.0.1" />
+	  <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.8" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.8" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.8">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.8" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.8">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	  <PackageReference Include="System.Text.Json" Version="6.0.5" />
+	  <PackageReference Include="Google.Apis" Version="1.57.0" />
+	  <PackageReference Include="Google.Apis.Auth" Version="1.57.0" />
+	  <PackageReference Include="Google.Apis.Core" Version="1.57.0" />
+	  <PackageReference Include="Google.Apis.Drive.v3" Version="1.57.0.2746" />
+	  <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2727" />
   </ItemGroup>
 
 </Project>

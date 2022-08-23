@@ -35,7 +35,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Bot.BusinessLogic\Bot.BusinessLogic.csproj" />
     <ProjectReference Include="..\Bot.Common\Bot.Common.csproj" />
-    <ProjectReference Include="..\Bot.GoogleSheet\Bot.GoogleSheet.csproj" />
   </ItemGroup>
 
 </Project>
