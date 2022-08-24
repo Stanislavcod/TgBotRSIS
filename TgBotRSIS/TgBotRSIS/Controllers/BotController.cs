@@ -25,6 +25,72 @@ namespace TgBotRSIS.Controllers
         string userGroup;
         string userDate;
         string userTime;
+
+        static string ReadDay(int n)
+        {
+            var range = $"{sheetSettings}!I13:13";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if(values != null && values.Count > 0)
+            {
+                foreach(var row in values)
+                {
+                    return $"{row[n]}"; 
+                }
+            }
+            return null;
+        }
+        static string ReadTime()
+        {
+            var range = $"{sheetSettings}!I14:J";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach (var row in values)
+                {
+                    return $"{row}";
+                }
+            }
+            return null;
+        }
+        static string ReadCountUserInGroup()
+        {
+            var range = $"{sheetSettings}!C3";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach (var row in values)
+                {
+                    return $"{row[0]},{row[1]}";
+                }
+            }
+            return null;
+
+        }
+        static string GroupComposition()
+        {
+            var range = $"{sheetSettings}!E3:F16";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach (var row in values)
+                {
+                    return $"{row[0]},{row[1]}";
+                }
+            }
+            return null;
+        }
         static void CreateHeader()
         {
             var range = $"{sheetData}!A:E";
@@ -78,19 +144,24 @@ namespace TgBotRSIS.Controllers
             if (isGroupReg)
             {
                 isGroupReg = false;
-                string dateFirst = "суббота 23 июля";
-                string dateLast = "воскресенье 24 июля";
-                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:");
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время⏳");
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
-                listButton.Add(new[]
+                foreach(var item in ReadTime())
                 {
-                    InlineKeyboardButton.WithCallbackData(text: "8:00 - 9:00", "time1Day1"),
-                    InlineKeyboardButton.WithCallbackData(text: "9:00 - 10:00", "time2Day1"),
-                    InlineKeyboardButton.WithCallbackData(text: "10:00 - 11:00", "time3Day1"),
-                    InlineKeyboardButton.WithCallbackData(text: "11:00 - 12:00", "time4Day1")
-                });
+                    if(item != null)
+                    {
+                        listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: item.ToString(), callbackData : item.ToString()) });
+                    }
+                }
+                //listButton.Add(new[]
+                //{
+                //    InlineKeyboardButton.WithCallbackData(text: "8:00 - 9:00", "time1Day1"),
+                //    InlineKeyboardButton.WithCallbackData(text: "9:00 - 10:00", "time2Day1"),
+                //    InlineKeyboardButton.WithCallbackData(text: "10:00 - 11:00", "time3Day1"),
+                //    InlineKeyboardButton.WithCallbackData(text: "11:00 - 12:00", "time4Day1")
+                //});
                 InlineKeyboardMarkup keyboard = new(listButton.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: dateFirst, replyMarkup: keyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(0), replyMarkup: keyboard);
                 InlineKeyboardMarkup keyboardSecondDay = new(new[]
                 {
                     InlineKeyboardButton.WithCallbackData(text: "8:00 - 9:00", "time1Day2"),
@@ -98,7 +169,7 @@ namespace TgBotRSIS.Controllers
                     InlineKeyboardButton.WithCallbackData(text: "10:00 - 11:00", "time3Day2"),
                     InlineKeyboardButton.WithCallbackData(text: "11:00 - 12:00", "time4Day2")
                 });
-                await bot.SendTextMessageAsync(message.Chat.Id, text: dateLast, replyMarkup: keyboardSecondDay);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(1), replyMarkup: keyboardSecondDay);
                 isTimeReg = true;
             }
         }
