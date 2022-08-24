@@ -7,21 +7,30 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TgBotRSIS.Controllers
 {
     public class BotController
     {
-        public static readonly string SpreadsheetsId = "1 - 9e5eaCj_aIrVNjfgsbutNWhfJCHTBgSZkdmmIGVkGE";
+        public static readonly string SpreadsheetsId = "1-9e5eaCj_aIrVNjfgsbutNWhfJCHTBgSZkdmmIGVkGE";
         public static readonly string sheetSettings = "Настройки";
         public static readonly string sheetData = "Данные";
         static SheetsService service;
+
+        bool isGroupReg = false;
+        bool isTimeReg = false;
+
+        string userName;
+        string userGroup;
+        string userDate;
+        string userTime;
         static void CreateHeader()
         {
             var range = $"{sheetData}!A:E";
             var valueRange = new ValueRange();
 
-            var objectList = new List<object>() { "Id", "Name","Group", "Date", "Time"};
+            var objectList = new List<object>() { "Id", "Name", "Group", "Date", "Time" };
             valueRange.Values = new List<IList<object>> { objectList };
 
             var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
@@ -37,14 +46,14 @@ namespace TgBotRSIS.Controllers
                 HttpClientInitializer = GoogleSheetHelper.Credentials,
                 ApplicationName = GoogleSheetHelper.ApplicationName,
             });
-            CreateHeader();
+            //CreateHeader();
             if (update.Type == UpdateType.Message && update?.Message?.Text != null)
             {
                 await HandleMessage(bot, update.Message);
                 return;
             }
 
-            if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
+            if (update.Type == UpdateType.CallbackQuery)
             {
                 await HandleCallbackQuery(bot, update.CallbackQuery);
             }
@@ -55,12 +64,62 @@ namespace TgBotRSIS.Controllers
             if (message.Text.ToLower() == "/start")
             {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Напишите свое имя и фамилию✍️");
+                userName = message.Text;
                 return;
             }
+            //Fix
+            if (userName != null)
+            {
+                int group = 1;
+                await bot.SendTextMessageAsync(message.Chat.Id, text: $"Ваша группа №{group}");
+                isGroupReg = true;
+            }
+            //Fix
+            if (isGroupReg)
+            {
+                isGroupReg = false;
+                string dateFirst = "суббота 23 июля";
+                string dateLast = "воскресенье 24 июля";
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:");
+                List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
+                listButton.Add(new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(text: "8:00 - 9:00", "time1Day1"),
+                    InlineKeyboardButton.WithCallbackData(text: "9:00 - 10:00", "time2Day1"),
+                    InlineKeyboardButton.WithCallbackData(text: "10:00 - 11:00", "time3Day1"),
+                    InlineKeyboardButton.WithCallbackData(text: "11:00 - 12:00", "time4Day1")
+                });
+                InlineKeyboardMarkup keyboard = new(listButton.ToArray());
+                await bot.SendTextMessageAsync(message.Chat.Id, text: dateFirst, replyMarkup: keyboard);
+                InlineKeyboardMarkup keyboardSecondDay = new(new[]
+                {
+                    InlineKeyboardButton.WithCallbackData(text: "8:00 - 9:00", "time1Day2"),
+                    InlineKeyboardButton.WithCallbackData(text: "9:00 - 10:00", "time2Day2"),
+                    InlineKeyboardButton.WithCallbackData(text: "10:00 - 11:00", "time3Day2"),
+                    InlineKeyboardButton.WithCallbackData(text: "11:00 - 12:00", "time4Day2")
+                });
+                await bot.SendTextMessageAsync(message.Chat.Id, text: dateLast, replyMarkup: keyboardSecondDay);
+                isTimeReg = true;
+            }
         }
-
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
         {
+            //Fix
+            if (callbackQuery.Data == "time1Day1" || callbackQuery.Data == "time2Day1" ||
+                callbackQuery.Data == "time3Day1" || callbackQuery.Data == "time4Day1" ||
+                callbackQuery.Data == "time1Day2" || callbackQuery.Data == "time2Day2" ||
+                callbackQuery.Data == "time1Day2" || callbackQuery.Data == "time2Day2")
+            {
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на субботу 23 июля 8:00 - 9:00");
+                ReplyKeyboardMarkup keyboard = new(new[]
+                            {
+                                new KeyboardButton[] { "Да", "Нет" },
+                            })
+                {
+                    ResizeKeyboard = true
+                };
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
+            }
         }
 
         public Task HandleErrorAsync(ITelegramBotClient client, Exception exception, CancellationToken cancellationToken)

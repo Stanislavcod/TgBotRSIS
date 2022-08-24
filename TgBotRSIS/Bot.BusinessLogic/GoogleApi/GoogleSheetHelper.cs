@@ -1,5 +1,4 @@
 ﻿using Google.Apis.Auth.OAuth2;
-using Google.Apis.Drive.v3;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Util.Store;
 
@@ -12,7 +11,8 @@ namespace Bot.BusinessLogic.GoogleApi
         static GoogleSheetHelper()
         {
             string[] Scopes = {
-                DriveService.Scope.Drive
+                SheetsService.Scope.Drive,
+                SheetsService.Scope.SpreadsheetsReadonly
             };
             using (var stream =
                        new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
@@ -21,7 +21,7 @@ namespace Bot.BusinessLogic.GoogleApi
                 Credentials = GoogleWebAuthorizationBroker.AuthorizeAsync(
                     GoogleClientSecrets.FromStream(stream).Secrets,
                     Scopes,
-                    "user",
+                    "Clients",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
                 Console.WriteLine("Credential file saved to: " + credPath);
