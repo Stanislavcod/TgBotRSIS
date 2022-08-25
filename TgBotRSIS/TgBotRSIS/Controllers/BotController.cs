@@ -19,7 +19,7 @@ namespace TgBotRSIS.Controllers
         static SheetsService service;
 
         bool isGroupReg = false;
-        bool isTimeReg = false;
+        bool isNameReg = false;
 
         string userName;
         string userGroup;
@@ -124,14 +124,18 @@ namespace TgBotRSIS.Controllers
 
         public async Task HandleMessage(ITelegramBotClient bot, Message message)
         {
-            if (message.Text.ToLower() == "/start")
+            if (message.Text == "/start")
             {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Напишите свое имя и фамилию✍️");
+                isNameReg = true;
+            }
+            if (isNameReg && message.Text != "/start")
+            {
+                isNameReg = false;
                 userName = message.Text;
-                return;
             }
             //Fix
-            if (userName != null)
+            if (userName != null && userGroup == null)
             {
                 int group = 1;
                 await bot.SendTextMessageAsync(message.Chat.Id, text: $"Ваша группа №{group}");
@@ -168,7 +172,6 @@ namespace TgBotRSIS.Controllers
                 }
                 InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
                 await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(1), replyMarkup: inlineKeyboard);
-                isTimeReg = true;
             }
             if (message.Text == "Нет")
             {
@@ -181,12 +184,14 @@ namespace TgBotRSIS.Controllers
                 var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
                 appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 var appendResponse = appendRequest.Execute();
-                
+
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Спасибо! Увидимся на встрече😉");
+                return;
             }
             if (message.Text == "Да")
             {
                 isGroupReg = true;
+                return;
             }
         }
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
