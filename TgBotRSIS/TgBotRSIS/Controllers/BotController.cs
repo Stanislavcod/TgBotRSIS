@@ -25,6 +25,7 @@ namespace TgBotRSIS.Controllers
         string userGroup;
         string userDate;
         string userTime;
+        string tgName;
 
         static string ReadDay(int n)
         {
@@ -93,7 +94,7 @@ namespace TgBotRSIS.Controllers
             var range = $"{sheetData}!A:E";
             var valueRange = new ValueRange();
 
-            var objectList = new List<object>() { "Id", "Name", "Group", "Date", "Time" };
+            var objectList = new List<object>() { "TgName", "Name", "Group", "Date", "Time" };
             valueRange.Values = new List<IList<object>> { objectList };
 
             var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
@@ -126,6 +127,11 @@ namespace TgBotRSIS.Controllers
         {
             if (message.Text == "/start")
             {
+                tgName = message.From.Username;
+                if(tgName == null)
+                {
+                    tgName = message.From.FirstName + " " + message.From.LastName;
+                }
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Напишите свое имя и фамилию✍️");
                 isNameReg = true;
             }
@@ -146,9 +152,9 @@ namespace TgBotRSIS.Controllers
             if (isGroupReg)
             {
                 isGroupReg = false;
-                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время⏳");
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
-                var range = $"{sheetSettings}!I14:J17";
+                var range = $"{sheetSettings}!I14:O26";
                 var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
                 var response = request.Execute();
@@ -157,6 +163,7 @@ namespace TgBotRSIS.Controllers
                 {
                     foreach (var row in values)
                     {
+                        if(row != null)
                         listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}", callbackData: "timeFirst_" + row[0].ToString()) });
                     }
                 }
@@ -167,6 +174,7 @@ namespace TgBotRSIS.Controllers
                 {
                     foreach (var row in values)
                     {
+                        if(row != null)
                         keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
                     }
                 }
@@ -175,10 +183,10 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "Нет")
             {
-                var range = $"{sheetData}!A:D";
+                var range = $"{sheetData}!A:E";
                 var valueRange = new ValueRange();
 
-                var objectList = new List<object>() { userName, userGroup, userDate, userTime };
+                var objectList = new List<object>() { tgName,userName, userGroup, userDate, userTime };
                 valueRange.Values = new List<IList<object>> { objectList };
 
                 var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
@@ -201,7 +209,7 @@ namespace TgBotRSIS.Controllers
             {
                 userDate = ReadDay(0);
                 userTime = callbackQuery.Data.Substring(10);
-                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(0)} {userTime}");
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(0)} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
@@ -216,7 +224,7 @@ namespace TgBotRSIS.Controllers
             {
                 userDate = ReadDay(1);
                 userTime = callbackQuery.Data.Substring(11);
-                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(1)} {userTime}");
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(1)} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
