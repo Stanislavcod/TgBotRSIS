@@ -20,6 +20,7 @@ namespace TgBotRSIS.Controllers
 
         bool isGroupReg = false;
         bool isNameReg = false;
+        bool isChoise = false;
 
         string userName;
         string userGroup;
@@ -30,6 +31,22 @@ namespace TgBotRSIS.Controllers
         static string ReadDay(int n)
         {
             var range = $"{sheetSettings}!I13:J13";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach (var row in values)
+                {
+                    return $"{row[n]}";
+                }
+            }
+            return null;
+        }
+        static string ReadDayTwo(int n)
+        {
+            var range = $"{sheetSettings}!H2:I2";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
@@ -139,19 +156,32 @@ namespace TgBotRSIS.Controllers
             {
                 isNameReg = false;
                 userName = message.Text;
+                isChoise = true;
             }
-            //Fix
-            if (userName != null && userGroup == null)
+            if (isChoise)
             {
-                int group = 1;
-                await bot.SendTextMessageAsync(message.Chat.Id, text: $"Ваша группа №{group}");
-                userGroup = group.ToString();
-                isGroupReg = true;
+                isChoise = false;
+                ReplyKeyboardMarkup keyboard = new(new[]
+                            {
+                                new KeyboardButton[] { "На созвон", "На проверку" },
+                            })
+                {
+                    ResizeKeyboard = true
+                };
+                await bot.SendTextMessageAsync(message.Chat.Id, "Куда вас записать?✍️", replyMarkup: keyboard);
+                return;
             }
             //Fix
             if (isGroupReg)
             {
                 isGroupReg = false;
+                int group = 1;
+                await bot.SendTextMessageAsync(message.Chat.Id, text: $"Ваша группа №{group}");
+                userGroup = group.ToString();
+            }
+            //Fix
+            if (message.Text == "На созвон")
+            {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
                 var range = $"{sheetSettings}!I14:O26";
@@ -181,6 +211,37 @@ namespace TgBotRSIS.Controllers
                 InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
                 await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(1), replyMarkup: inlineKeyboard);
             }
+            if (message.Text == "На проверку")
+            {
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
+                List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
+                var range = $"{sheetSettings}!H3:I10";
+                var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+                var response = request.Execute();
+                var values = response.Values;
+                if (values != null && values.Count > 0)
+                {
+                    foreach (var row in values)
+                    {
+                        if (row != null)
+                            listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}", callbackData: "timeFirst_" + row[0].ToString()) });
+                    }
+                }
+                InlineKeyboardMarkup keyboard = new(listButton.ToArray());
+                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDayTwo(0), replyMarkup: keyboard);
+                List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
+                if (values != null && values.Count > 0)
+                {
+                    foreach (var row in values)
+                    {
+                        if (row != null)
+                            keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
+                    }
+                }
+                InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
+                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDayTwo(1), replyMarkup: inlineKeyboard);
+            }
             if (message.Text == "Нет")
             {
                 var range = $"{sheetData}!A:E";
@@ -198,9 +259,9 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "Да")
             {
-                isGroupReg = true;
                 return;
             }
+
         }
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
         {
@@ -218,6 +279,7 @@ namespace TgBotRSIS.Controllers
                     ResizeKeyboard = true
                 };
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
+                isGroupReg = true;
                 return;
             }
             if (callbackQuery.Data.StartsWith("timeSecond_"))
@@ -233,6 +295,7 @@ namespace TgBotRSIS.Controllers
                     ResizeKeyboard = true
                 };
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
+                isGroupReg = true;
                 return;
             }
         }
