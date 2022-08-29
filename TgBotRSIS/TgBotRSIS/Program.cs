@@ -29,7 +29,7 @@ GroupService _groupService = ActivatorUtilities.CreateInstance<GroupService>(hos
 UserService _userService = ActivatorUtilities.CreateInstance<UserService>(host.Services);
 GoogleSheetService _googleSheetService = ActivatorUtilities.CreateInstance<GoogleSheetService>(host.Services);
 
-var botController = new BotController();
+var botController = new BotController(_googleSheetService);
 
 var botClient = new TelegramBotClient("5721181824:AAE_ZzRam-Ik3b6StGQkqHQc4wXS7tiSVWY");
 

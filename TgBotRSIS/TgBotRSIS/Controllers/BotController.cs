@@ -1,4 +1,6 @@
 ﻿using Bot.BusinessLogic.GoogleApi;
+using Bot.BusinessLogic.Services.Implementations;
+using Bot.BusinessLogic.Services.Interfaces;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -13,6 +15,7 @@ namespace TgBotRSIS.Controllers
 {
     public class BotController
     {
+        private readonly IGoogleSheetService _googleSheet;
         public static readonly string SpreadsheetsId = "1-9e5eaCj_aIrVNjfgsbutNWhfJCHTBgSZkdmmIGVkGE";
         public static readonly string sheetSettings = "Настройки";
         public static readonly string sheetData = "Данные";
@@ -27,6 +30,10 @@ namespace TgBotRSIS.Controllers
         string userDate;
         string userTime;
         string tgName;
+        public BotController(IGoogleSheetService googleSheet)
+        {
+            _googleSheet = googleSheet;
+        }
 
         static string ReadDay(int n)
         {
@@ -60,19 +67,19 @@ namespace TgBotRSIS.Controllers
             }
             return null;
         }
-        //static List<object> ReadTime()
-        //{
-        //    var range = $"{sheetSettings}!I14:J21";
-        //    var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+        static List<List<object>> ReadTime()
+        {
+            var range = $"{sheetSettings}!I14:J20";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
-        //    var response = request.Execute();
-        //    var values = response.Values;
-        //    if (values != null && values.Count > 0)
-        //    {
-        //        return (List<object>)values;
-        //    }
-        //    return null;
-        //}
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                return values.Select(x => x.ToList()).ToList();
+            }
+            return null;
+        }
         static string ReadCountUserInGroup()
         {
             var range = $"{sheetSettings}!C3";
@@ -145,7 +152,7 @@ namespace TgBotRSIS.Controllers
             if (message.Text == "/start")
             {
                 tgName = message.From.Username;
-                if(tgName == null)
+                if (tgName == null)
                 {
                     tgName = message.From.FirstName + " " + message.From.LastName;
                 }
@@ -183,18 +190,26 @@ namespace TgBotRSIS.Controllers
             if (message.Text == "На созвон")
             {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
-                List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
+                List<List<InlineKeyboardButton>> listButton = new List<List<InlineKeyboardButton>>();
+                List<InlineKeyboardButton> inlineKeyboardButtons = new List<InlineKeyboardButton>();
                 var range = $"{sheetSettings}!I14:O26";
                 var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
                 var response = request.Execute();
                 var values = response.Values;
-                if (values != null && values.Count > 0)
+                //if (values != null && values.Count > 0)
+                //{
+                foreach (var row in ReadTime().ToList())
                 {
-                    foreach (var row in values)
+                    for (var i = 1; i < row.Count; i++)
                     {
-                        if(row != null)
-                        listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}", callbackData: "timeFirst_" + row[0].ToString()) });
+                        inlineKeyboardButtons.Add(InlineKeyboardButton.WithCallbackData(text: $"{row[0].ToString()}",
+                                callbackData: "timeFirst_" + row[0].ToString()));
+                        if (i % 2 == 0)
+                        {
+                            listButton.Add(inlineKeyboardButtons);
+                            inlineKeyboardButtons = new List<InlineKeyboardButton>();
+                        }
                     }
                 }
                 InlineKeyboardMarkup keyboard = new(listButton.ToArray());
@@ -204,8 +219,8 @@ namespace TgBotRSIS.Controllers
                 {
                     foreach (var row in values)
                     {
-                        if(row != null)
-                        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
+                        if (row != null)
+                            keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
                     }
                 }
                 InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
@@ -247,7 +262,7 @@ namespace TgBotRSIS.Controllers
                 var range = $"{sheetData}!A:E";
                 var valueRange = new ValueRange();
 
-                var objectList = new List<object>() { tgName,userName, userGroup, userDate, userTime };
+                var objectList = new List<object>() { tgName, userName, userGroup, userDate, userTime };
                 valueRange.Values = new List<IList<object>> { objectList };
 
                 var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
@@ -255,6 +270,15 @@ namespace TgBotRSIS.Controllers
                 var appendResponse = appendRequest.Execute();
 
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Спасибо! Увидимся на встрече😉");
+                ReplyKeyboardMarkup keyboard = new(new[]
+                            {
+                                new KeyboardButton[] { "Изменить время", "/start" },
+                            })
+                {
+                    ResizeKeyboard = true
+                };
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Нажмите \"/start\" для новой записи или нажмите " +
+                    "\"Изменить время\" чтобы изменить время записи", replyMarkup: keyboard);
                 return;
             }
             if (message.Text == "Да")
