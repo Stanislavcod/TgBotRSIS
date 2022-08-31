@@ -15,18 +15,10 @@ IMapper mapper = mappingConfig.CreateMapper();
 IHost host = Host.CreateDefaultBuilder()
                .ConfigureServices((context, services) =>
                {
-                   services.AddTransient<IDateService, DateService>();
-                   services.AddTransient<ITimeService, TimeService>();
-                   services.AddTransient<IGroupService, GroupService>();
-                   services.AddTransient<IUserService, UserService>();
                    services.AddTransient<IGoogleSheetService, GoogleSheetService>();
                    services.AddSingleton(mapper);
                })
                .Build();
-DateService _dateService = ActivatorUtilities.CreateInstance<DateService>(host.Services);
-TimeService _timeService = ActivatorUtilities.CreateInstance<TimeService>(host.Services);
-GroupService _groupService = ActivatorUtilities.CreateInstance<GroupService>(host.Services);
-UserService _userService = ActivatorUtilities.CreateInstance<UserService>(host.Services);
 GoogleSheetService _googleSheetService = ActivatorUtilities.CreateInstance<GoogleSheetService>(host.Services);
 
 var botController = new BotController(_googleSheetService);

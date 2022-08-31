@@ -1,10 +1,4 @@
-﻿using Bot.BusinessLogic.GoogleApi;
-using Bot.BusinessLogic.Services.Implementations;
-using Bot.BusinessLogic.Services.Interfaces;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
+﻿using Bot.BusinessLogic.Services.Interfaces;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -16,12 +10,7 @@ namespace TgBotRSIS.Controllers
     public class BotController
     {
         private readonly IGoogleSheetService _googleSheet;
-        public static readonly string SpreadsheetsId = "1-9e5eaCj_aIrVNjfgsbutNWhfJCHTBgSZkdmmIGVkGE";
-        public static readonly string sheetSettings = "Настройки";
-        public static readonly string sheetData = "Данные";
-        static SheetsService service;
 
-        bool isGroupReg = false;
         bool isNameReg = false;
         bool isChoise = false;
 
@@ -30,111 +19,13 @@ namespace TgBotRSIS.Controllers
         string userDate;
         string userTime;
         string tgName;
-        public BotController(IGoogleSheetService googleSheet)
+        public BotController(IGoogleSheetService googlesheet)
         {
-            _googleSheet = googleSheet;
+            _googleSheet = googlesheet;
         }
-
-        static string ReadDay(int n)
-        {
-            var range = $"{sheetSettings}!I13:J13";
-            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-            var response = request.Execute();
-            var values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                foreach (var row in values)
-                {
-                    return $"{row[n]}";
-                }
-            }
-            return null;
-        }
-        static string ReadDayTwo(int n)
-        {
-            var range = $"{sheetSettings}!H2:I2";
-            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-            var response = request.Execute();
-            var values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                foreach (var row in values)
-                {
-                    return $"{row[n]}";
-                }
-            }
-            return null;
-        }
-        static List<List<object>> ReadTime()
-        {
-            var range = $"{sheetSettings}!I14:J20";
-            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-            var response = request.Execute();
-            var values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                return values.Select(x => x.ToList()).ToList();
-            }
-            return null;
-        }
-        static string ReadCountUserInGroup()
-        {
-            var range = $"{sheetSettings}!C3";
-            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-            var response = request.Execute();
-            var values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                foreach (var row in values)
-                {
-                    return $"{row[0]},{row[1]}";
-                }
-            }
-            return null;
-
-        }
-        static string GroupComposition()
-        {
-            var range = $"{sheetSettings}!E3:F16";
-            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-            var response = request.Execute();
-            var values = response.Values;
-            if (values != null && values.Count > 0)
-            {
-                foreach (var row in values)
-                {
-                    return $"{row[0]},{row[1]}";
-                }
-            }
-            return null;
-        }
-        static void CreateHeader()
-        {
-            var range = $"{sheetData}!A:E";
-            var valueRange = new ValueRange();
-
-            var objectList = new List<object>() { "TgName", "Name", "Group", "Date", "Time" };
-            valueRange.Values = new List<IList<object>> { objectList };
-
-            var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
-            appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource
-                .AppendRequest.ValueInputOptionEnum.USERENTERED;
-            var appendResponse = appendRequest.Execute();
-        }
+        
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
         {
-            GoogleCredential credential;
-            service = new SheetsService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = GoogleSheetHelper.Credentials,
-                ApplicationName = GoogleSheetHelper.ApplicationName,
-            });
-            //CreateHeader();
             if (update.Type == UpdateType.Message && update?.Message?.Text != null)
             {
                 await HandleMessage(bot, update.Message);
@@ -144,6 +35,7 @@ namespace TgBotRSIS.Controllers
             if (update.Type == UpdateType.CallbackQuery)
             {
                 await HandleCallbackQuery(bot, update.CallbackQuery);
+                return;
             }
         }
 
@@ -178,97 +70,56 @@ namespace TgBotRSIS.Controllers
                 await bot.SendTextMessageAsync(message.Chat.Id, "Куда вас записать?✍️", replyMarkup: keyboard);
                 return;
             }
-            //Fix
-            if (isGroupReg)
-            {
-                isGroupReg = false;
-                int group = 1;
-                await bot.SendTextMessageAsync(message.Chat.Id, text: $"Ваша группа №{group}");
-                userGroup = group.ToString();
-            }
-            //Fix
             if (message.Text == "На созвон")
             {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
-                List<List<InlineKeyboardButton>> listButton = new List<List<InlineKeyboardButton>>();
-                List<InlineKeyboardButton> inlineKeyboardButtons = new List<InlineKeyboardButton>();
-                var range = $"{sheetSettings}!I14:O26";
-                var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-                var response = request.Execute();
-                var values = response.Values;
-                //if (values != null && values.Count > 0)
-                //{
-                foreach (var row in ReadTime().ToList())
+                List<InlineKeyboardButton[]> keyboardFirstDay = new List<InlineKeyboardButton[]>();
+                foreach (var row in _googleSheet.ReadTimeForCalling().ToList())
                 {
-                    for (var i = 1; i < row.Count; i++)
-                    {
-                        inlineKeyboardButtons.Add(InlineKeyboardButton.WithCallbackData(text: $"{row[0].ToString()}",
-                                callbackData: "timeFirst_" + row[0].ToString()));
-                        if (i % 2 == 0)
-                        {
-                            listButton.Add(inlineKeyboardButtons);
-                            inlineKeyboardButtons = new List<InlineKeyboardButton>();
-                        }
-                    }
+                    if (row != null)
+                        keyboardFirstDay.Add(new[] {InlineKeyboardButton.WithCallbackData(text: $"{row[0].ToString()}",
+                                callbackData: "timeFirst_" + row[0].ToString())});
                 }
-                InlineKeyboardMarkup keyboard = new(listButton.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(0), replyMarkup: keyboard);
+                InlineKeyboardMarkup keyboard = new(keyboardFirstDay.ToArray());
+                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayForCalling(0).ToString(), replyMarkup: keyboard);
+
                 List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
-                if (values != null && values.Count > 0)
+                foreach (var row in _googleSheet.ReadTimeForCalling().ToList())
                 {
-                    foreach (var row in values)
-                    {
-                        if (row != null)
-                            keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
-                    }
+                    if (row != null)
+                        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}",
+                                callbackData: "timeSecond_" + row[1].ToString()) });
                 }
                 InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDay(1), replyMarkup: inlineKeyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayForCalling(1), replyMarkup: inlineKeyboard);
+                return;
             }
             if (message.Text == "На проверку")
             {
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
-                var range = $"{sheetSettings}!H3:I10";
-                var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
-
-                var response = request.Execute();
-                var values = response.Values;
-                if (values != null && values.Count > 0)
+                foreach (var row in _googleSheet.ReadTimeToCheck().ToList())
                 {
-                    foreach (var row in values)
-                    {
-                        if (row != null)
-                            listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}", callbackData: "timeFirst_" + row[0].ToString()) });
-                    }
+                    if (row != null)
+                        listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}",
+                            callbackData: "timeFirst_" + row[0].ToString()) });
                 }
                 InlineKeyboardMarkup keyboard = new(listButton.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDayTwo(0), replyMarkup: keyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayToCheck(0), replyMarkup: keyboard);
+
                 List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
-                if (values != null && values.Count > 0)
+                foreach (var row in _googleSheet.ReadTimeToCheck().ToList())
                 {
-                    foreach (var row in values)
-                    {
-                        if (row != null)
-                            keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
-                    }
+                    if (row != null)
+                        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
                 }
                 InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: ReadDayTwo(1), replyMarkup: inlineKeyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayToCheck(1), replyMarkup: inlineKeyboard);
+                return;
             }
             if (message.Text == "Нет")
             {
-                var range = $"{sheetData}!A:E";
-                var valueRange = new ValueRange();
-
-                var objectList = new List<object>() { tgName, userName, userGroup, userDate, userTime };
-                valueRange.Values = new List<IList<object>> { objectList };
-
-                var appendRequest = service.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, range);
-                appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-                var appendResponse = appendRequest.Execute();
-
+                _googleSheet.WriteData(tgName, userName,userGroup, userDate,userTime);
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Спасибо! Увидимся на встрече😉");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
@@ -285,16 +136,14 @@ namespace TgBotRSIS.Controllers
             {
                 return;
             }
-
         }
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
         {
-            //Fix
             if (callbackQuery.Data.StartsWith("timeFirst_"))
             {
-                userDate = ReadDay(0);
+                userDate = _googleSheet.ReadDayForCalling(0);
                 userTime = callbackQuery.Data.Substring(10);
-                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(0)} {userTime} (Минск, МСК)");
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {_googleSheet.ReadDayForCalling(0)} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
@@ -303,14 +152,13 @@ namespace TgBotRSIS.Controllers
                     ResizeKeyboard = true
                 };
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
-                isGroupReg = true;
                 return;
             }
             if (callbackQuery.Data.StartsWith("timeSecond_"))
             {
-                userDate = ReadDay(1);
+                userDate = _googleSheet.ReadDayForCalling(1);
                 userTime = callbackQuery.Data.Substring(11);
-                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {ReadDay(1)} {userTime} (Минск, МСК)");
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {_googleSheet.ReadDayForCalling(1)} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
@@ -319,7 +167,6 @@ namespace TgBotRSIS.Controllers
                     ResizeKeyboard = true
                 };
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
-                isGroupReg = true;
                 return;
             }
         }
