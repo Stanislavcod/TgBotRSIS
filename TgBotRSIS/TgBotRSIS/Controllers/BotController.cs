@@ -119,6 +119,8 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "Нет")
             {
+                _googleSheet.UpdateTimeToCheck(userTime);
+                _googleSheet.UpdateTimeForCalling(userTime);
                 _googleSheet.WriteData(tgName, userName,userGroup, userDate,userTime);
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Спасибо! Увидимся на встрече😉");
                 ReplyKeyboardMarkup keyboard = new(new[]

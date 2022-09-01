@@ -75,6 +75,7 @@ namespace Bot.BusinessLogic.Services.Implementations
             {
                 return values.Select(x => x.ToList()).ToList();
             }
+            values.Clear();
             return null;
         }
         public List<List<object>> ReadTimeToCheck()
@@ -90,9 +91,71 @@ namespace Bot.BusinessLogic.Services.Implementations
             }
             return null;
         }
+        public void UpdateTimeToCheck(string time)
+        {
+            var range = $"{sheetSettings}!H3:I15";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach(var row in values)
+                {
+                    foreach (var item in row)
+                    {
+                        if (item.ToString() == time)
+                        {
+                            Google.Apis.Sheets.v4.Data.ClearValuesRequest requestBody = new Google.Apis.Sheets.v4.Data.ClearValuesRequest();
+
+                            SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
+
+                            Google.Apis.Sheets.v4.Data.ClearValuesResponse responseClear = requestClear.Execute();
+
+                            //var valueRange = new ValueRange();
+
+                            //var objectList = new List<object>() { "-" };
+                            //valueRange.Values = new List<IList<object>> { objectList };
+
+                            //var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
+                            //updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                            //var updateResponse = updateRequest.Execute();
+                        }
+                    }
+                }
+            }
+        }
+        public void UpdateTimeForCalling(string time)
+        {
+            var range = $"{sheetSettings}!L3:M9";
+            var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+            var response = request.Execute();
+            var values = response.Values;
+            if (values != null && values.Count > 0)
+            {
+                foreach (var row in values)
+                {
+                    foreach (var item in row)
+                    {
+                        if (item.ToString() == time)
+                        {
+                            var valueRange = new ValueRange();
+
+                            var objectList = new List<object>() { "---" };
+                            valueRange.Values = new List<IList<object>> { objectList };
+
+                            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
+                            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                            var updateResponse = updateRequest.Execute();
+                        }
+                    }
+                }
+            }
+        }
         public string ReadCountUserInGroup()
         {
-            var range = $"{sheetSettings}!C3";
+            var range = $"{sheetSettings}!B2";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();

@@ -11,5 +11,7 @@ namespace Bot.BusinessLogic.Services.Interfaces
         public string ReadCountUserInGroup();
         public string GroupComposition();
         public void CreateHeader();
+        public void UpdateTimeToCheck(string time);
+        public void UpdateTimeForCalling(string time);
     }
 }
