@@ -94,10 +94,16 @@ namespace Bot.BusinessLogic.Services.Implementations
         public void UpdateTimeToCheck(string time)
         {
             var range = $"{sheetSettings}!H3:I15";
+            var newRange = $"{sheetSettings}!H21:O21";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
             var values = response.Values;
+            IList<object> newValues = new List<object>();
+            foreach(var row in values)
+            {
+                newValues.Add(row[0]);
+            }
             if (values != null && values.Count > 0)
             {
                 foreach(var row in values)
@@ -106,20 +112,27 @@ namespace Bot.BusinessLogic.Services.Implementations
                     {
                         if (item.ToString() == time)
                         {
-                            Google.Apis.Sheets.v4.Data.ClearValuesRequest requestBody = new Google.Apis.Sheets.v4.Data.ClearValuesRequest();
+                            newValues.Remove(item);
+                            //IList<object> list = new List<object>();
+                            //list = row[0];
+                            //list.Remove(item);
+                            var valueRange = new ValueRange();
+                            valueRange.Values = new List<IList<object>>() { newValues };
 
-                            SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
 
-                            Google.Apis.Sheets.v4.Data.ClearValuesResponse responseClear = requestClear.Execute();
+
+                            //ClearValuesRequest requestBody = new ClearValuesRequest();
+                            //SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
+                            //ClearValuesResponse responseClear = requestClear.Execute();
+
+
 
                             //var valueRange = new ValueRange();
-
                             //var objectList = new List<object>() { "-" };
                             //valueRange.Values = new List<IList<object>> { objectList };
-
-                            //var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
-                            //updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-                            //var updateResponse = updateRequest.Execute();
+                            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, newRange);
+                            updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                            var updateResponse = updateRequest.Execute();
                         }
                     }
                 }
