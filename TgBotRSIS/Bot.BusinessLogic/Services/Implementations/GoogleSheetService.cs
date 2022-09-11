@@ -34,7 +34,7 @@ namespace Bot.BusinessLogic.Services.Implementations
         }
         public string ReadDayForCalling(int n)
         {
-            var range = $"{sheetSettings}!L2:M2";
+            var range = $"{sheetSettings}!R23:S23";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
@@ -50,7 +50,7 @@ namespace Bot.BusinessLogic.Services.Implementations
         }
         public string ReadDayToCheck(int n)
         {
-            var range = $"{sheetSettings}!H2:I2";
+            var range = $"{sheetSettings}!N18:O18";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
@@ -66,7 +66,7 @@ namespace Bot.BusinessLogic.Services.Implementations
         }
         public List<List<object>> ReadTimeForCalling()
         {
-            var range = $"{sheetSettings}!L3:M15";
+            var range = $"{sheetSettings}!A11:I12";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
@@ -80,7 +80,7 @@ namespace Bot.BusinessLogic.Services.Implementations
         }
         public List<List<object>> ReadTimeToCheck()
         {
-            var range = $"{sheetSettings}!H3:I15";
+            var range = $"{sheetSettings}!A2:I3";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
@@ -91,18 +91,40 @@ namespace Bot.BusinessLogic.Services.Implementations
             }
             return null;
         }
+        //public void TestRead()
+        //{
+        //    var range = $"{sheetSettings}!A2:I3";
+        //    var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
+
+        //    var response = request.Execute();
+        //    var values = response.Values;
+        //    if (values != null && values.Count > 0)
+        //    {
+        //        foreach (var row in values)
+        //        {
+        //            for (int i = 0; i < row.Count(); i++)
+        //            {
+        //                Console.WriteLine(row[i]);
+        //            }
+        //        }
+        //    }
+        //}
+
         public void UpdateTimeToCheck(string time)
         {
-            var range = $"{sheetSettings}!H3:I15";
-            var newRange = $"{sheetSettings}!H21:O21";
+            var range = $"{sheetSettings}!A2:I3";
+            //var rangeTwoRow = $"{sheetSettings}!A3:I3";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
             var values = response.Values;
-            IList<object> newValues = new List<object>();
+            List<object> newValues = new List<object>();
             foreach(var row in values)
             {
-                newValues.Add(row[0]);
+                for (int i = 0; i < row.Count(); i++)
+                {
+                    newValues.Add(row[i]);
+                }
             }
             if (values != null && values.Count > 0)
             {
@@ -113,24 +135,14 @@ namespace Bot.BusinessLogic.Services.Implementations
                         if (item.ToString() == time)
                         {
                             newValues.Remove(item);
-                            //IList<object> list = new List<object>();
-                            //list = row[0];
-                            //list.Remove(item);
                             var valueRange = new ValueRange();
                             valueRange.Values = new List<IList<object>>() { newValues };
 
+                            ClearValuesRequest requestBody = new ClearValuesRequest();
+                            SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
+                            ClearValuesResponse responseClear = requestClear.Execute();
 
-
-                            //ClearValuesRequest requestBody = new ClearValuesRequest();
-                            //SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
-                            //ClearValuesResponse responseClear = requestClear.Execute();
-
-
-
-                            //var valueRange = new ValueRange();
-                            //var objectList = new List<object>() { "-" };
-                            //valueRange.Values = new List<IList<object>> { objectList };
-                            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, newRange);
+                            var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
                             updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
                             var updateResponse = updateRequest.Execute();
                         }
@@ -140,11 +152,19 @@ namespace Bot.BusinessLogic.Services.Implementations
         }
         public void UpdateTimeForCalling(string time)
         {
-            var range = $"{sheetSettings}!L3:M9";
+            var range = $"{sheetSettings}!A11:I11";
             var request = service.Spreadsheets.Values.Get(SpreadsheetsId, range);
 
             var response = request.Execute();
             var values = response.Values;
+            List<object> newValues = new List<object>();
+            foreach (var row in values)
+            {
+                for (int i = 0; i < row.Count(); i++)
+                {
+                    newValues.Add(row[i]);
+                }
+            }
             if (values != null && values.Count > 0)
             {
                 foreach (var row in values)
@@ -153,10 +173,13 @@ namespace Bot.BusinessLogic.Services.Implementations
                     {
                         if (item.ToString() == time)
                         {
+                            newValues.Remove(item);
                             var valueRange = new ValueRange();
+                            valueRange.Values = new List<IList<object>>() { newValues };
 
-                            var objectList = new List<object>() { "---" };
-                            valueRange.Values = new List<IList<object>> { objectList };
+                            ClearValuesRequest requestBody = new ClearValuesRequest();
+                            SpreadsheetsResource.ValuesResource.ClearRequest requestClear = service.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
+                            ClearValuesResponse responseClear = requestClear.Execute();
 
                             var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
                             updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;

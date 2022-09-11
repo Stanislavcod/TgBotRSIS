@@ -72,50 +72,55 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "На созвон")
             {
-                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
                 List<InlineKeyboardButton[]> keyboardFirstDay = new List<InlineKeyboardButton[]>();
                 foreach (var row in _googleSheet.ReadTimeForCalling().ToList())
                 {
-                    if (row != null)
-                        keyboardFirstDay.Add(new[] {InlineKeyboardButton.WithCallbackData(text: $"{row[0].ToString()}",
-                                callbackData: "timeFirst_" + row[0].ToString())});
+                    for (int i = 0; i < row.Count(); i++)
+                    {
+                        if (row != null)
+                            keyboardFirstDay.Add(new[] {InlineKeyboardButton.WithCallbackData(text: $"{row[i].ToString()}",
+                                callbackData: "timeFirst_" + row[i].ToString())});
+                    }
                 }
                 InlineKeyboardMarkup keyboard = new(keyboardFirstDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayForCalling(0).ToString(), replyMarkup: keyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:\n(Минск, МСК)⏳", replyMarkup: keyboard);
 
-                List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
-                foreach (var row in _googleSheet.ReadTimeForCalling().ToList())
-                {
-                    if (row != null)
-                        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}",
-                                callbackData: "timeSecond_" + row[1].ToString()) });
-                }
-                InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayForCalling(1), replyMarkup: inlineKeyboard);
-                return;
+                //List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
+                //foreach (var row in _googleSheet.ReadTimeForCalling().ToList())
+                //{
+                //    if (row != null)
+                //        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}",
+                //                callbackData: "timeSecond_" + row[1].ToString()) });
+                //}
+                //InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
+                //await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayForCalling(1), replyMarkup: inlineKeyboard);
+                //return;
             }
             if (message.Text == "На проверку")
             {
-                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время (Минск, МСК)⏳");
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:\n(Минск, МСК)⏳");
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
                 foreach (var row in _googleSheet.ReadTimeToCheck().ToList())
                 {
-                    if (row != null)
-                        listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[0]}",
-                            callbackData: "timeFirst_" + row[0].ToString()) });
+                    for (int i = 0; i < row.Count(); i++)
+                    {
+                        if (row != null)
+                            listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
+                            callbackData: "timeFirst_" + row[i].ToString()) });
+                    }
                 }
                 InlineKeyboardMarkup keyboard = new(listButton.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayToCheck(0), replyMarkup: keyboard);
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время: \n(Минск, МСК)⏳", replyMarkup: keyboard);
 
-                List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
-                foreach (var row in _googleSheet.ReadTimeToCheck().ToList())
-                {
-                    if (row != null)
-                        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
-                }
-                InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayToCheck(1), replyMarkup: inlineKeyboard);
-                return;
+                //List<InlineKeyboardButton[]> keyboardSecondDay = new List<InlineKeyboardButton[]>();
+                //foreach (var row in _googleSheet.ReadTimeToCheck().ToList())
+                //{
+                //    if (row != null)
+                //        keyboardSecondDay.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[1]}", callbackData: "timeSecond_" + row[1].ToString()) });
+                //}
+                //InlineKeyboardMarkup inlineKeyboard = new(keyboardSecondDay.ToArray());
+                //await bot.SendTextMessageAsync(message.Chat.Id, text: _googleSheet.ReadDayToCheck(1), replyMarkup: inlineKeyboard);
+                //return;
             }
             if (message.Text == "Нет")
             {
