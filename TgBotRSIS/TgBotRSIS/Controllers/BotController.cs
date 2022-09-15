@@ -23,7 +23,7 @@ namespace TgBotRSIS.Controllers
         {
             _googleSheet = googlesheet;
         }
-        
+
         public async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
         {
             if (update.Type == UpdateType.Message && update?.Message?.Text != null)
@@ -72,23 +72,34 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "На созвон")
             {
-                List<InlineKeyboardButton[]> keyboardFirstDay = new List<InlineKeyboardButton[]>();
+                string day = "";
+                List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
                 foreach (var row in _googleSheet.ReadTime("A9:I10").ToList())
                 {
                     for (int i = 0; i < row.Count(); i++)
                     {
                         if (row != null)
                         {
-                            keyboardFirstDay.Add(new[] {InlineKeyboardButton.WithCallbackData(text: $"{row[i].ToString()}",
-                                callbackData: "timeFirst_" + row[i].ToString())});
+                            if (row[i].ToString()[0] > 57)
+                            {
+                                day = row[i].ToString();
+                                listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
+                            callbackData: "dayCall"  )});
+                            }
+                            else
+                            {
+                                listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
+                            callbackData: $"Calling*{day}*" + row[i].ToString()) });
+                            }
                         }
                     }
                 }
-                InlineKeyboardMarkup keyboard = new(keyboardFirstDay.ToArray());
-                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:\n(Минск, МСК)⏳", replyMarkup: keyboard);
+                InlineKeyboardMarkup keyboardMarkup = new(listButton.ToArray());
+                await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время:\n(Минск, МСК)⏳", replyMarkup: keyboardMarkup);
             }
             if (message.Text == "На проверку")
             {
+                string day = "";
                 List<InlineKeyboardButton[]> listButton = new List<InlineKeyboardButton[]>();
                 foreach (var row in _googleSheet.ReadTime("A2:I3").ToList())
                 {
@@ -96,8 +107,17 @@ namespace TgBotRSIS.Controllers
                     {
                         if (row != null)
                         {
-                            listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
-                            callbackData: "timeSecond_" + row[i].ToString()) });
+                            if (row[i].ToString()[0] > 57)
+                            {
+                                day = row[i].ToString();
+                                listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
+                            callbackData: "dayCheck"  )});
+                            }
+                            else
+                            {
+                                listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
+                            callbackData: $"Check*{day}*" + row[i].ToString()) });
+                            }
                         }
                     }
                 }
@@ -106,8 +126,23 @@ namespace TgBotRSIS.Controllers
             }
             if (message.Text == "Нет")
             {
-                _googleSheet.UpdateTimeToCheck(userTime, "B2:I2");
-                _googleSheet.WriteData(tgName, userName,userGroup, userDate,userTime);
+                if (userDate == _googleSheet.ReadDay("A2"))
+                {
+                    _googleSheet.UpdateTimeToCheck(userTime, "A2:I2");
+                }
+                else if(userDate == _googleSheet.ReadDay("A3"))
+                {
+                    _googleSheet.UpdateTimeToCheck(userTime, "A3:I3");
+                }
+                else if(userDate == _googleSheet.ReadDay("A9"))
+                {
+                    _googleSheet.UpdateTimeToCheck(userTime, "A9:I9");
+                }
+                else if(userDate == _googleSheet.ReadDay("A10"))
+                {
+                    _googleSheet.UpdateTimeToCheck(userTime, "A10:I10");
+                }
+                _googleSheet.WriteData(tgName, userName, userGroup, userDate, userTime);
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Спасибо! Увидимся на встрече😉");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
@@ -127,14 +162,12 @@ namespace TgBotRSIS.Controllers
         }
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
         {
-            if (callbackQuery.Data.StartsWith("timeFirst_"))
+            if (callbackQuery.Data.StartsWith("Calling"))
             {
-                userDate = _googleSheet.ReadDay("A11");
-                userTime = callbackQuery.Data.Substring(10);
-                if (_googleSheet.ReadDay("A11") == userDate)
-                {
-                    await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {_googleSheet.ReadDay("A11")} {userTime} (Минск, МСК)");
-                }
+                string[] day = callbackQuery.Data.Split('*');
+                userDate = day[1];
+                userTime = day[2];
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {userDate} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
@@ -145,11 +178,12 @@ namespace TgBotRSIS.Controllers
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
                 return;
             }
-            if (callbackQuery.Data.StartsWith("timeSecond_"))
+            if (callbackQuery.Data.StartsWith("Check"))
             {
-                userDate = _googleSheet.ReadDay("A11");
-                userTime = callbackQuery.Data.Substring(11);
-                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {_googleSheet.ReadDay("A11")} {userTime} (Минск, МСК)");
+                string[] day = callbackQuery.Data.Split('*');
+                userDate = day[1];
+                userTime = day[2];
+                await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, text: $"Вы записанны на {userDate} {userTime} (Минск, МСК)");
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
                                 new KeyboardButton[] { "Да", "Нет" },
