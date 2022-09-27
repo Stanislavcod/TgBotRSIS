@@ -90,7 +90,7 @@ namespace Bot.BusinessLogic.Services.Implementations
                             requestClear.Execute();
                             var updateRequest = service.Spreadsheets.Values.Update(valueRange, SpreadsheetsId, range);
                             updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-                            var updateResponse = updateRequest.Execute();
+                            updateRequest.Execute();
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 ﻿using Bot.BusinessLogic.Services.Interfaces;
+using Google.Apis.Util;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
@@ -13,6 +14,8 @@ namespace TgBotRSIS.Controllers
 
         bool isNameReg = false;
         bool isChoise = false;
+        bool editTime = false;
+
 
         string userName;
         string userGroup;
@@ -57,8 +60,19 @@ namespace TgBotRSIS.Controllers
                 userName = message.Text;
                 isChoise = true;
             }
-            if (isChoise)
+            if (message.Text == "Да")
             {
+                editTime = true;
+                return;
+            }
+            if(message.Text == "Изменить время")
+            {
+                editTime = true;
+                return;
+            }
+            if (isChoise || editTime)
+            {
+                editTime = false;
                 isChoise = false;
                 ReplyKeyboardMarkup keyboard = new(new[]
                             {
@@ -88,8 +102,9 @@ namespace TgBotRSIS.Controllers
                             }
                             else
                             {
+                                listButton.AsReadOnly();
                                 listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
-                            callbackData: $"Calling*{day}*" + row[i].ToString()) });
+                            callbackData: $"Cal*{day}*" + row[i].ToString()) });
                             }
                         }
                     }
@@ -116,12 +131,13 @@ namespace TgBotRSIS.Controllers
                             else
                             {
                                 listButton.Add(new[] { InlineKeyboardButton.WithCallbackData(text: $"{row[i]}",
-                            callbackData: $"Check*{day}*" + row[i].ToString()) });
+                            callbackData: $"Che*{day}*" + row[i].ToString()) });
                             }
                         }
                     }
                 }
                 InlineKeyboardMarkup keyboard = new(listButton.ToArray());
+
                 await bot.SendTextMessageAsync(message.Chat.Id, text: "Выберите дату и время: \n(Минск, МСК)⏳", replyMarkup: keyboard);
             }
             if (message.Text == "Нет")
@@ -130,15 +146,15 @@ namespace TgBotRSIS.Controllers
                 {
                     _googleSheet.UpdateTimeToCheck(userTime, "A2:I2");
                 }
-                else if(userDate == _googleSheet.ReadDay("A3"))
+                else if (userDate == _googleSheet.ReadDay("A3"))
                 {
                     _googleSheet.UpdateTimeToCheck(userTime, "A3:I3");
                 }
-                else if(userDate == _googleSheet.ReadDay("A9"))
+                else if (userDate == _googleSheet.ReadDay("A9"))
                 {
                     _googleSheet.UpdateTimeToCheck(userTime, "A9:I9");
                 }
-                else if(userDate == _googleSheet.ReadDay("A10"))
+                else if (userDate == _googleSheet.ReadDay("A10"))
                 {
                     _googleSheet.UpdateTimeToCheck(userTime, "A10:I10");
                 }
@@ -155,14 +171,10 @@ namespace TgBotRSIS.Controllers
                     "\"Изменить время\" чтобы изменить время записи", replyMarkup: keyboard);
                 return;
             }
-            if (message.Text == "Да")
-            {
-                return;
-            }
         }
         async Task HandleCallbackQuery(ITelegramBotClient bot, CallbackQuery callbackQuery)
         {
-            if (callbackQuery.Data.StartsWith("Calling"))
+            if (callbackQuery.Data.StartsWith("Cal"))
             {
                 string[] day = callbackQuery.Data.Split('*');
                 userDate = day[1];
@@ -178,7 +190,7 @@ namespace TgBotRSIS.Controllers
                 await bot.SendTextMessageAsync(callbackQuery.Message.Chat.Id, "Хотите изменить время?", replyMarkup: keyboard);
                 return;
             }
-            if (callbackQuery.Data.StartsWith("Check"))
+            if (callbackQuery.Data.StartsWith("Che"))
             {
                 string[] day = callbackQuery.Data.Split('*');
                 userDate = day[1];

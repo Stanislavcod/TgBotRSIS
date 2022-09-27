@@ -23,7 +23,7 @@ GoogleSheetService _googleSheetService = ActivatorUtilities.CreateInstance<Googl
 
 var botController = new BotController(_googleSheetService);
 
-var botClient = new TelegramBotClient("5721181824:AAE_ZzRam-Ik3b6StGQkqHQc4wXS7tiSVWY");
+var botClient = new TelegramBotClient("5340890836:AAE7jr920TtWEa-TXBMALGXnWSFMDh5NiGk");
 
 using var cts = new CancellationTokenSource();
 

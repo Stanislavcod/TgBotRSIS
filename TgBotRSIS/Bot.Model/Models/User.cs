@@ -7,7 +7,7 @@ namespace Bot.Model.Models
         public string? Name { get; set; }
         public string? TgName { get; set; }
         public int GroupNumber { get; set; }
-        public string? DateOfRecording { get; set; }
-        public string? TimeOfRecording { get; set; }
+        public string? Date { get; set; }
+        public string? Time { get; set; }
     }
 }
